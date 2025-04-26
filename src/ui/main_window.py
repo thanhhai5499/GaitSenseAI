@@ -19,7 +19,8 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
 
-        QTimer.singleShot(500, self.update_camera_dropdowns)
+        # Update camera dropdowns once at startup
+        self.update_camera_dropdowns()
 
     def init_ui(self):
         self.setWindowTitle("Gait Analysis System")
@@ -150,11 +151,11 @@ class MainWindow(QMainWindow):
         self.save_data_btn.clicked.connect(self.save_analysis_data)
 
     def update_camera_dropdowns(self):
-        threading.Thread(target=self._update_camera_dropdowns_thread, daemon=True).start()
-
-    def _update_camera_dropdowns_thread(self):
+        # Get the latest active cameras from the camera manager
+        self.active_cameras = self.camera_manager.get_active_cameras()
         active_cameras_copy = self.active_cameras.copy()
 
+        # Update camera dropdowns in all views
         self.front_camera_view.update_camera_list(active_cameras_copy)
         self.back_camera_view.update_camera_list(active_cameras_copy)
         self.left_camera_view.update_camera_list(active_cameras_copy)
@@ -179,6 +180,7 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("Saving analysis data...")
 
     def closeEvent(self, event):
+        # Disconnect all cameras
         self.front_camera_view.disconnect_camera()
         self.back_camera_view.disconnect_camera()
         self.left_camera_view.disconnect_camera()

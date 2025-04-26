@@ -135,13 +135,17 @@ class CameraView(QWidget):
         self.camera_combo.currentIndexChanged.connect(self.on_camera_selection_changed)
 
     def update_camera_list(self, active_cameras: Dict[str, Any]):
-        current_text = self.camera_combo.currentText()
+        # Save current selection
+        current_camera_id = self.camera_combo.currentData()
 
+        # Clear the combo box
         self.camera_combo.clear()
         self.camera_combo.addItem("None", None)
 
+        # Get all available cameras from the camera manager
         available_cameras = self.camera_manager.get_available_cameras()
 
+        # Add all available cameras to the dropdown
         for camera in available_cameras:
             camera_id = camera['id']
 
@@ -153,12 +157,25 @@ class CameraView(QWidget):
                     break
 
             if not skip:
-                self.camera_combo.addItem(camera['name'], camera_id)
+                # Add camera to dropdown with name and resolution info
+                camera_name = camera['name']
+                resolution = f"{camera['width']}x{camera['height']}"
+                fps = camera['fps']
+                display_name = f"{camera_name} ({resolution}@{fps}fps)"
 
-        # Try to restore previous selection
-        index = self.camera_combo.findText(current_text)
-        if index >= 0:
-            self.camera_combo.setCurrentIndex(index)
+                self.camera_combo.addItem(display_name, camera_id)
+
+        # Restore previous selection if possible
+        if current_camera_id is not None:
+            index = self.camera_combo.findData(current_camera_id)
+            if index >= 0:
+                self.camera_combo.setCurrentIndex(index)
+            else:
+                # If previous camera is no longer available, select "None"
+                self.camera_combo.setCurrentIndex(0)
+
+        # Enable/disable connect button based on selection
+        self.connect_btn.setEnabled(self.camera_combo.currentIndex() > 0)
 
     def on_camera_selection_changed(self, index):
         self.connect_btn.setEnabled(index > 0)  # Enable if not "None"
