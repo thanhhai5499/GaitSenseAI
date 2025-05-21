@@ -2,12 +2,15 @@ import sys
 import logging
 from PyQt6.QtWidgets import QApplication
 
+# Import OpenCV config to disable warnings
+from src.utils import opencv_config
+
 from src.ui.main_window import MainWindow
 from src.camera.threaded_camera_manager import ThreadedCameraManager
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Changed from INFO to WARNING to reduce terminal output
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)

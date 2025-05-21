@@ -22,17 +22,20 @@ Hệ thống phân tích dáng đi sử dụng camera và các cảm biến gia 
 ## Cài đặt
 
 1. Clone repository:
+
 ```
 git clone https://github.com/yourusername/gait-analysis-system.git
 cd gait-analysis-system
 ```
 
 2. Cài đặt các thư viện cần thiết:
+
 ```
 pip install -r requirements.txt
 ```
 
 3. Tải model OpenPose:
+
 - Tạo thư mục `models`
 - Tải file `pose_deploy_linevec.prototxt` và `pose_iter_440000.caffemodel` từ [OpenPose GitHub](https://github.com/CMU-Perceptual-Computing-Lab/openpose/tree/master/models)
 - Đặt các file này vào thư mục `models`
@@ -40,6 +43,7 @@ pip install -r requirements.txt
 ## Sử dụng
 
 Chạy chương trình:
+
 ```
 python main.py
 ```

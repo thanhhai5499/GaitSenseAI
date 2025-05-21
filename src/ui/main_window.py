@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSlot
 import threading
+import time
 
 from ..camera.threaded_camera_manager import ThreadedCameraManager as CameraManager
 from .camera_view import CameraView
@@ -19,8 +20,15 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
 
+        # Register for camera change notifications
+        self.camera_manager.register_camera_change_callback(self.update_camera_dropdowns)
+
         # Update camera dropdowns once at startup
         self.update_camera_dropdowns()
+
+        # Mark UI as ready to receive camera updates
+        # This is done after UI initialization to prevent UI updates during startup
+        self.camera_manager.set_ui_ready()
 
     def init_ui(self):
         self.setWindowTitle("Gait Analysis System")
@@ -146,14 +154,39 @@ class MainWindow(QMainWindow):
         self.left_camera_view.camera_selected.connect(self.on_camera_selected)
         self.right_camera_view.camera_selected.connect(self.on_camera_selected)
 
+        # Connect pose detection signals
+        self.front_camera_view.pose_detected.connect(self.on_pose_detected)
+        self.back_camera_view.pose_detected.connect(self.on_pose_detected)
+        self.left_camera_view.pose_detected.connect(self.on_pose_detected)
+        self.right_camera_view.pose_detected.connect(self.on_pose_detected)
+
         self.start_analysis_btn.clicked.connect(self.start_analysis)
         self.stop_analysis_btn.clicked.connect(self.stop_analysis)
         self.save_data_btn.clicked.connect(self.save_analysis_data)
 
+    # Track last update time to throttle updates
+    _last_dropdown_update_time = 0
+    _dropdown_update_throttle = 0.5  # Minimum time between updates (seconds)
+
     def update_camera_dropdowns(self):
+        """
+        Update camera dropdowns in all views.
+        Throttled to avoid too frequent updates.
+        """
+        current_time = time.time()
+
+        # Throttle updates to avoid UI freezing with rapid updates
+        if current_time - self._last_dropdown_update_time < self._dropdown_update_throttle:
+            return
+
+        self._last_dropdown_update_time = current_time
+
         # Get the latest active cameras from the camera manager
         self.active_cameras = self.camera_manager.get_active_cameras()
         active_cameras_copy = self.active_cameras.copy()
+
+        # Get available cameras (uses cache if available)
+        available_cameras = self.camera_manager.get_available_cameras()
 
         # Update camera dropdowns in all views
         self.front_camera_view.update_camera_list(active_cameras_copy)
@@ -161,14 +194,24 @@ class MainWindow(QMainWindow):
         self.left_camera_view.update_camera_list(active_cameras_copy)
         self.right_camera_view.update_camera_list(active_cameras_copy)
 
+        # Update status bar with camera information
+        if not available_cameras:
+            self.status_bar.showMessage("No cameras detected. Please connect a camera.")
+        else:
+            self.status_bar.showMessage(f"Detected {len(available_cameras)} cameras. Ready.")
+
     @pyqtSlot(str, object)
     def on_camera_selected(self, position, camera_id):
         self.active_cameras[position] = camera_id
 
         if camera_id is not None:
             self.status_bar.showMessage(f"Camera {camera_id} selected for {position} position")
+            # Update all camera dropdowns to hide the newly selected camera
+            self.update_camera_dropdowns()
         else:
             self.status_bar.showMessage(f"No camera selected for {position} position")
+            # Update all camera dropdowns to show the newly disconnected camera
+            self.update_camera_dropdowns()
 
     def start_analysis(self):
         self.status_bar.showMessage("Analysis started")
@@ -179,11 +222,58 @@ class MainWindow(QMainWindow):
     def save_analysis_data(self):
         self.status_bar.showMessage("Saving analysis data...")
 
+    @pyqtSlot(str, dict)
+    def on_pose_detected(self, position, landmarks):
+        """
+        Handle pose detection results from camera views.
+
+        Args:
+            position: Camera position (front, back, left, right)
+            landmarks: Dictionary of detected landmarks
+        """
+        if not landmarks:
+            return
+
+        # Extract leg-related landmarks for gait analysis
+        leg_landmarks = {k: v for k, v in landmarks.items() if 'KNEE' in k or 'ANKLE' in k or 'HIP' in k or 'HEEL' in k or 'FOOT_INDEX' in k}
+
+        # Calculate joint angles if we have enough landmarks
+        if 'LEFT_HIP' in landmarks and 'LEFT_KNEE' in landmarks and 'LEFT_ANKLE' in landmarks:
+            # Here we would calculate joint angles and update the gait analysis view
+            # For now, just update the status bar
+            self.status_bar.showMessage(f"Detected leg skeleton in {position} camera view")
+
     def closeEvent(self, event):
-        # Disconnect all cameras
-        self.front_camera_view.disconnect_camera()
-        self.back_camera_view.disconnect_camera()
-        self.left_camera_view.disconnect_camera()
-        self.right_camera_view.disconnect_camera()
+        """
+        Handle window close event.
+        Ensure all cameras are properly disconnected and resources are released.
+        """
+        # Show status message
+        self.status_bar.showMessage("Shutting down, disconnecting cameras...")
+
+        # Process events to update UI immediately
+        from PyQt6.QtCore import QCoreApplication
+        QCoreApplication.processEvents()
+
+        # Unregister camera change callback
+        self.camera_manager.unregister_camera_change_callback(self.update_camera_dropdowns)
+
+        # Release MediaPipe resources
+        if hasattr(self.front_camera_view, 'pose_model'):
+            self.front_camera_view.pose_model.release()
+        if hasattr(self.back_camera_view, 'pose_model'):
+            self.back_camera_view.pose_model.release()
+        if hasattr(self.left_camera_view, 'pose_model'):
+            self.left_camera_view.pose_model.release()
+        if hasattr(self.right_camera_view, 'pose_model'):
+            self.right_camera_view.pose_model.release()
+
+        # Disconnect all cameras using the camera manager directly
+        # This is more reliable than calling disconnect on each view
+        self.camera_manager.disconnect_all_cameras()
+
+        # Wait a moment to ensure all resources are released
+        import time
+        time.sleep(0.5)
 
         event.accept()
