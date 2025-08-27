@@ -1,1 +1,2 @@
+# GaitSenseAI - Gait Analysis Application
 
