@@ -45,6 +45,21 @@ def generate_new_diagnosis_report(self, diagnosis, data_file):
                 box-shadow: 0 4px 15px rgba(0,120,212,0.3);
                 text-align: center;
             }}
+            .patient-info {{
+                margin-top: 20px;
+                font-size: 18px;
+                text-align: left !important;
+                color: black !important;
+            }}
+            .patient-info p {{
+                color: black !important;
+                text-align: left !important;
+                margin: 5px 0;
+            }}
+            .patient-info strong {{
+                color: black !important;
+                font-weight: bold;
+            }}
             .section {{ 
                 margin: 20px 0; 
                 padding: 25px; 
@@ -159,25 +174,35 @@ def generate_new_diagnosis_report(self, diagnosis, data_file):
     </head>
     <body>
         <div class="header">
-            <h2>🏥 BÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
-            <div style="margin-top: 20px; font-size: 18px;">
-                <p><strong>👤 Bệnh nhân:</strong> {diagnosis.get('patient_name', 'N/A')} - {diagnosis.get('patient_age', 'N/A')} tuổi ({diagnosis.get('patient_gender', 'N/A')})</p>
-                <p><strong>📅 Thời gian:</strong> {diagnosis.get('session_date', 'N/A')}</p>
+            <h2>BÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
+            <div class="patient-info">
+                <p><strong>Người Đo:</strong> {diagnosis.get('patient_name', 'N/A')} - {diagnosis.get('patient_age', 'N/A')} tuổi ({diagnosis.get('patient_gender', 'N/A')})</p>
+                <p><strong>Thời gian:</strong> {diagnosis.get('session_date', 'N/A')}</p>
             </div>
         </div>
     """
     
     # Tóm tắt tổng quan
     overall_score = diagnosis.get('severity_score', 0)
-    status_classes = {0: 'normal', 1: 'mild', 2: 'moderate', 3: 'severe'}
-    status_texts = {0: 'BÌNH THƯỜNG', 1: 'CẦN CHÚ Ý', 2: 'CẦN ĐIỀU TRỊ', 3: 'NGHIÊM TRỌNG'}
-    status_colors = {0: '#28a745', 1: '#ffc107', 2: '#fd7e14', 3: '#dc3545'}
+    
+    # Determine status based on score ranges (supports decimal values)
+    def get_status_info(score):
+        if score < 0.5:
+            return 'BÌNH THƯỜNG', '#28a745', 'normal'
+        elif score < 1.5:
+            return 'CẦN CHÚ Ý', '#ffc107', 'mild'
+        elif score < 2.5:
+            return 'CẦN ĐIỀU TRỊ', '#fd7e14', 'moderate'
+        else:
+            return 'NGHIÊM TRỌNG', '#dc3545', 'severe'
+    
+    status_text, status_color, status_class = get_status_info(overall_score)
     
     html += f"""
         <div class="section">
             <div class="section-title">📊 TỔNG QUAN TÌNH TRẠNG</div>
-            <div class="overall-status" style="background: {status_colors.get(overall_score, '#6c757d')}; color: white;">
-                {status_texts.get(overall_score, 'KHÔNG XÁC ĐỊNH')} - Điểm số: {overall_score}/3
+            <div class="overall-status" style="background: {status_color}; color: white;">
+                {status_text} - Điểm số: {overall_score}/3
             </div>
             <div class="summary-card">
                 <h3>📋 Đánh giá tổng thể:</h3>
@@ -223,7 +248,7 @@ def generate_new_diagnosis_report(self, diagnosis, data_file):
                     </div>
                     
                     <div class="deviation-visual">
-                        <div class="deviation-fill status-{status_classes.get(overall_score, 'unknown')}" 
+                        <div class="deviation-fill status-{status_class}" 
                              style="width: {bar_width}%; background: {color};">
                         </div>
                     </div>

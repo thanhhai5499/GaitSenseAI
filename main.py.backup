@@ -794,7 +794,7 @@ class MainWindow(QMainWindow):
         </head>
         <body>
             <div class="header">
-                <h2>🏥 BÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
+                <h2>ÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
                 <div style="margin-top: 20px; font-size: 18px;">
                     <p><strong>👤 Bệnh nhân:</strong> {diagnosis.get('patient_name', 'N/A')} - {diagnosis.get('patient_age', 'N/A')} tuổi ({diagnosis.get('patient_gender', 'N/A')})</p>
                     <p><strong>📅 Thời gian:</strong> {diagnosis.get('session_date', 'N/A')}</p>
@@ -1343,7 +1343,7 @@ class MainWindow(QMainWindow):
             errors.append("• Tuổi phải từ 1 đến 120")
         
         if errors:
-            message = "Vui lòng nhập đầy đủ thông tin bệnh nhân:\n\n" + "\n".join(errors)
+            message = "Vui lòng nhập đầy đủ thông tin người đo:\n\n" + "\n".join(errors)
             return {"valid": False, "message": message}
         
         return {"valid": True, "message": "Thông tin hợp lệ"}
