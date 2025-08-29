@@ -366,8 +366,7 @@ class MainWindow(QMainWindow):
         
         if exported_file:
             # Generate comprehensive diagnosis from exported file
-            from src.core.gait_analyzer import GaitAnalyzer
-            diagnosis = GaitAnalyzer.load_and_diagnose(exported_file)
+            diagnosis = self.gait_analyzer.load_and_diagnose(exported_file)
             
             if diagnosis:
                 # Show comprehensive diagnosis results
@@ -384,6 +383,9 @@ class MainWindow(QMainWindow):
             self.show_analysis_results(final_results, comparison_results)
         
         self.status_bar.showMessage("Phân tích hoàn tất - Dữ liệu đã lưu và phân tích")
+        
+        # Refresh history list to show new analysis
+        self.refresh_history_list()
     
     @pyqtSlot()
     def reset_analysis(self):
@@ -805,8 +807,8 @@ class MainWindow(QMainWindow):
         
         # Tóm tắt tổng quan
         overall_score = diagnosis.get('severity_score', 0)
-        status_colors = {0: '#28a745', 1: '#ffc107', 2: '#fd7e14', 3: '#dc3545'}
-        status_texts = {0: 'BÌNH THƯỜNG', 1: 'CẦN CHÚ Ý', 2: 'CẦN ĐIỀU TRỊ', 3: 'NGHIÊM TRỌNG'}
+        status_colors = {{0: '#28a745', 1: '#ffc107', 2: '#fd7e14', 3: '#dc3545'}}
+        status_texts = {{0: 'BÌNH THƯỜNG', 1: 'CẦN CHÚ Ý', 2: 'CẦN ĐIỀU TRỊ', 3: 'NGHIÊM TRỌNG'}}
         
         html += f"""
                 <div class="overall-status" style="background: {status_colors.get(overall_score, '#6c757d')}; color: white;">
@@ -992,25 +994,12 @@ class MainWindow(QMainWindow):
         import platform
         
         try:
-            # Convert relative path to absolute path if needed
-            if not os.path.isabs(filename):
-                # Get the current working directory and join with filename
-                current_dir = os.getcwd()
-                absolute_path = os.path.join(current_dir, filename)
-            else:
-                absolute_path = filename
-            
-            # Check if file exists
-            if not os.path.exists(absolute_path):
-                QMessageBox.warning(self, "Lỗi", f"File không tồn tại: {absolute_path}")
-                return
-            
             if platform.system() == 'Windows':
-                os.startfile(absolute_path)
+                os.startfile(filename)
             elif platform.system() == 'Darwin':  # macOS
-                subprocess.call(['open', absolute_path])
+                subprocess.call(['open', filename])
             else:  # Linux
-                subprocess.call(['xdg-open', absolute_path])
+                subprocess.call(['xdg-open', filename])
         except Exception as e:
             QMessageBox.warning(self, "Lỗi", f"Không thể mở file: {str(e)}")
     
@@ -1018,28 +1007,335 @@ class MainWindow(QMainWindow):
     def view_history_file(self, file_path):
         """View historical analysis file"""
         try:
-            # Import GaitAnalyzer class to call static method directly
-            from src.core.gait_analyzer import GaitAnalyzer
+            # Load and diagnose the historical file
+            diagnosis = self.gait_analyzer.load_and_diagnose(file_path)
+                    
+                    <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <p style="margin: 0;"><strong>💡 Lời khuyên tổng quát:</strong></p>
+                        <p style="margin: 10px 0 0 0; font-style: italic;">{diagnosis.get('assessment_summary', 'Cần đánh giá thêm để đưa ra lời khuyên phù hợp.')}</p>
+                    </div>
+                </div>
+            </div>
             
-            # Load and diagnose the historical file using static method
-            diagnosis = GaitAnalyzer.load_and_diagnose(file_path)
+            <div class="section">
+                <div class="section-title">🔍 CHI TIẾT PHÂN TÍCH TỪNG THÔNG SỐ</div>
+        """
+        
+        # Detailed findings - show only requested parameters
+        findings = diagnosis.get('detailed_findings', {})
+        
+        # Define the essential parameters to show in diagnosis report - bao gồm tất cả metrics quan trọng
+        essential_params = [
+            'Tốc Độ Đi',
+            'Chiều Dài Bước', 
+            'Thời Gian Đặt Chân',
+            'Chiều Cao Nâng Chân',
+            'Chiều Rộng Bước',
+            'Bất Cân Xứng Gối',
+            'Bất Cân Xứng Hông', 
+            'Bất Cân Xứng Cổ Chân'
+        ]
+        
+        for param_name in essential_params:
+            data = None
+            
+            # Look for this parameter in the findings
+            if param_name in findings:
+                data = findings[param_name]
+                
+            if data:
+                status = data.get('status', 'UNKNOWN')
+                recommendation = data.get('recommendation', 'N/A')
+                
+                # Map Vietnamese status to CSS class
+                status_css_map = {
+                    'BÌNH THƯỜNG': 'normal',
+                    'NHẸ': 'mild',
+                    'TRUNG BÌNH': 'moderate', 
+                    'NẶNG': 'severe'
+                }
+                status_class = f"status-{status_css_map.get(status, 'unknown')}"
+                
+                # Check if this is normative data or traditional assessment
+                if 'deviation_index' in data:
+                    # Normative data assessment
+                    deviation_index = data.get('deviation_index', 0)
+                    position_percentage = data.get('position_percentage', 50)
+                    norm_mean = data.get('normative_mean', 0)
+                    norm_std = data.get('normative_std', 0)
+                    measured_value = data.get('measured_value', 0)
+                    unit = data.get('unit', '')
+                    
+                    # Tạo giải thích vị trí so sánh
+                    if position_percentage >= 95:
+                        position_explanation = "Cao hơn hầu hết mọi người"
+                    elif position_percentage >= 75:
+                        position_explanation = "Cao hơn 3/4 dân số"
+                    elif position_percentage >= 50:
+                        position_explanation = "Trên mức trung bình"
+                    elif position_percentage >= 25:
+                        position_explanation = "Dưới mức trung bình"
+                    else:
+                        position_explanation = "Thấp hơn hầu hết mọi người"
+                    
+                    # Tạo mô tả dễ hiểu cho từng thông số
+                    param_descriptions = {
+                        'Tốc Độ Đi': 'Tốc độ đi bộ trung bình của bạn',
+                        'Chiều Dài Bước': 'Độ dài trung bình của mỗi bước chân',
+                        'Thời Gian Đặt Chân': 'Phần trăm thời gian chân chạm đất khi đi',
+                        'Chiều Cao Nâng Chân': 'Độ cao trung bình khi nâng chân lên',
+                        'Chiều Rộng Bước': 'Khoảng cách giữa hai chân khi đi'
+                    }
+                    
+                    description = param_descriptions.get(param_name, '')
+                    
+                    # Tạo lời giải thích đơn giản hơn
+                    simple_explanation = ""
+                    if status == 'BÌNH THƯỜNG':
+                        simple_explanation = "✅ Bình thường - không cần lo lắng"
+                    elif status == 'NHẸ':
+                        simple_explanation = "⚠️ Lệch nhẹ - cần theo dõi"
+                    elif status == 'TRUNG BÌNH':
+                        simple_explanation = "⚠️ Lệch trung bình - nên tham khảo bác sĩ"
+                    else:
+                        simple_explanation = "🔴 Lệch nhiều - cần khám ngay"
+                    
+                    html += f"""
+                    <div class="finding {status_class}">
+                        <h4 class="metric-name">{param_name}</h4>
+                        <p class="description" style="color: #666; font-style: italic; margin-bottom: 10px;">{description}</p>
+                        
+                        <div class="measurement-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <p style="margin: 5px 0;"><strong>📊 Giá trị của bạn:</strong> <span style="color: #0078d4; font-size: 18px; font-weight: bold;">{measured_value:.1f} {unit}</span></p>
+                            <p style="margin: 5px 0;"><strong>📋 Giá trị chuẩn:</strong> {norm_mean:.1f} ± {norm_std:.1f} {unit}</p>
+                            <p style="margin: 5px 0;"><strong>📈 So với người khác:</strong> {position_explanation}</p>
+                        </div>
+                        
+                        <div class="status-box" style="padding: 12px; border-left: 4px solid {'#28a745' if status == 'BÌNH THƯỜNG' else '#ffc107' if status in ['NHẸ', 'TRUNG BÌNH'] else '#dc3545'}; background: {'#d4edda' if status == 'BÌNH THƯỜNG' else '#fff3cd' if status in ['NHẸ', 'TRUNG BÌNH'] else '#f8d7da'}; margin: 10px 0;">
+                            <p style="margin: 0; font-weight: bold;">{simple_explanation}</p>
+                        </div>
+                        
+                        <div class="recommendation" style="background: #e9ecef; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                            <strong>💡 Lời khuyên:</strong> {recommendation}
+                        </div>
+                        
+                        <hr style="margin: 20px 0; border: none; border-top: 2px solid #dee2e6;">
+                    </div>
+                    """
+                elif 'asymmetry_percent' in data:
+                    # Asymmetry assessment - với mô tả dễ hiểu
+                    asymmetry = data.get('asymmetry_percent', 0)
+                    
+                    # Mô tả cho các thông số bất cân xứng
+                    asymmetry_descriptions = {
+                        'Bất Cân Xứng Gối': 'Sự khác biệt góc khớp gối giữa chân trái và chân phải',
+                        'Bất Cân Xứng Hông': 'Sự khác biệt góc khớp hông giữa chân trái và chân phải', 
+                        'Bất Cân Xứng Cổ Chân': 'Sự khác biệt góc khớp cổ chân giữa chân trái và chân phải'
+                    }
+                    
+                    description = asymmetry_descriptions.get(param_name, 'Sự khác biệt giữa chân trái và chân phải')
+                    
+                    # Tạo lời giải thích đơn giản cho bất cân xứng
+                    simple_explanation = ""
+                    if status == 'BÌNH THƯỜNG':
+                        simple_explanation = "✅ Cân xứng tốt - hai chân hoạt động đồng đều"
+                    elif status == 'NHẸ':
+                        simple_explanation = "⚠️ Hơi lệch - có thể do thói quen đi lại"
+                    elif status == 'TRUNG BÌNH':
+                        simple_explanation = "⚠️ Lệch rõ rệt - nên kiểm tra sức khỏe"
+                    else:
+                        simple_explanation = "🔴 Lệch nhiều - cần khám chuyên khoa ngay"
+                    
+                    # Tạo mô tả mức độ bất cân xứng
+                    asymmetry_level = ""
+                    if asymmetry <= 3:
+                        asymmetry_level = "Rất thấp (bình thường)"
+                    elif asymmetry <= 6:
+                        asymmetry_level = "Thấp (có thể chấp nhận)"
+                    elif asymmetry <= 10:
+                        asymmetry_level = "Trung bình (cần chú ý)"
+                    else:
+                        asymmetry_level = "Cao (cần can thiệp)"
+                    
+                    html += f"""
+                    <div class="finding {status_class}">
+                        <h4 class="metric-name">{param_name}</h4>
+                        <p class="description" style="color: #666; font-style: italic; margin-bottom: 10px;">{description}</p>
+                        
+                        <div class="measurement-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <p style="margin: 5px 0;"><strong>📊 Mức bất cân xứng:</strong> <span style="color: #0078d4; font-size: 18px; font-weight: bold;">{asymmetry:.1f}%</span></p>
+                            <p style="margin: 5px 0;"><strong>📋 Đánh giá mức độ:</strong> {asymmetry_level}</p>
+                            <p style="margin: 5px 0;"><strong>💡 Giải thích:</strong> Bất cân xứng dưới 3% là bình thường, trên 10% cần chú ý</p>
+                        </div>
+                        
+                        <div class="status-box" style="padding: 12px; border-left: 4px solid {'#28a745' if status == 'BÌNH THƯỜNG' else '#ffc107' if status in ['NHẸ', 'TRUNG BÌNH'] else '#dc3545'}; background: {'#d4edda' if status == 'BÌNH THƯỜNG' else '#fff3cd' if status in ['NHẸ', 'TRUNG BÌNH'] else '#f8d7da'}; margin: 10px 0;">
+                            <p style="margin: 0; font-weight: bold;">{simple_explanation}</p>
+                        </div>
+                        
+                        <div class="recommendation" style="background: #e9ecef; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                            <strong>💡 Lời khuyên:</strong> {recommendation}
+                        </div>
+                        
+                        <hr style="margin: 20px 0; border: none; border-top: 2px solid #dee2e6;">
+                    </div>
+                    """
+                else:
+                    # Traditional assessment
+                    difference = data.get('difference', 0)
+                    asymmetry = data.get('asymmetry', 0)
+                    html += f"""
+                    <div class="finding {status_class}">
+                        <h4 class="metric-name">{param_name}</h4>
+                        <p><strong>Trạng thái:</strong> {status}</p>
+                        <p><strong>Chênh lệch góc:</strong> {difference:.1f}°</p>
+                        <p><strong>Mức bất cân xứng:</strong> {asymmetry:.1f}%</p>
+                        <div class="recommendation">
+                            <strong>Khuyến nghị:</strong> {recommendation}
+                        </div>
+                        <hr style="margin: 15px 0; border: none; border-top: 2px solid #dee2e6;">
+                    </div>
+                    """
+        
+        # Recommendations
+        recommendations = diagnosis.get('recommendations', [])
+        if recommendations:
+            html += """
+                </div>
+                <div class="section">
+                    <div class="section-title">KHUYẾN NGHỊ ĐIỀU TRỊ</div>
+                    <ul>
+            """
+            for rec in recommendations:
+                html += f"<li>{rec}</li>"
+            html += "</ul></div>"
+        
+        # Data file info
+        html += f"""
+            <div class="section">
+                <div class="section-title">THÔNG TIN DỮ LIỆU</div>
+                <div class="data-info">
+                    <p><strong>File dữ liệu:</strong> {data_file}</p>
+                    <p><strong>Lưu ý:</strong> File dữ liệu chứa tất cả thông số chi tiết và có thể được sử dụng cho phân tích thêm hoặc tham khảo y tế.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">📚 HƯỚNG DẪN ĐỌC KẾT QUẢ</div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                    <h4 style="color: #0078d4; margin-top: 0;">🎯 Các thông số đo được:</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Tốc Độ Đi:</strong> Tốc độ đi bộ bình thường của bạn (m/s)</li>
+                        <li><strong>Chiều Dài Bước:</strong> Khoảng cách từ gót chân này đến gót chân kia (cm)</li>
+                        <li><strong>Thời Gian Đặt Chân:</strong> % thời gian chân chạm đất trong mỗi bước</li>
+                        <li><strong>Chiều Cao Nâng Chân:</strong> Độ cao nâng chân khi bước (cm)</li>
+                        <li><strong>Chiều Rộng Bước:</strong> Khoảng cách giữa 2 chân khi đi (cm)</li>
+                    </ul>
+                    
+                    <h4 style="color: #0078d4;">⚖️ Đánh giá bất cân xứng:</h4>
+                    <ul style="line-height: 1.8;">
+                        <li><strong>Bất cân xứng < 3%:</strong> Bình thường</li>
+                        <li><strong>Bất cân xứng 3-6%:</strong> Nhẹ, có thể do thói quen</li>
+                        <li><strong>Bất cân xứng 6-10%:</strong> Trung bình, cần chú ý</li>
+                        <li><strong>Bất cân xứng > 10%:</strong> Cao, nên thăm khám</li>
+                    </ul>
+                    
+                    <h4 style="color: #0078d4;">📊 Ý nghĩa màu sắc:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 15px 0;">
+                        <div style="padding: 10px; background: #d4edda; border-radius: 6px; text-align: center;">
+                            <strong style="color: #28a745;">✅ Xanh lá</strong><br>Bình thường
+                        </div>
+                        <div style="padding: 10px; background: #fff3cd; border-radius: 6px; text-align: center;">
+                            <strong style="color: #856404;">⚠️ Vàng</strong><br>Lệch nhẹ
+                        </div>
+                        <div style="padding: 10px; background: #ffeaa7; border-radius: 6px; text-align: center;">
+                            <strong style="color: #fd7e14;">⚠️ Cam</strong><br>Lệch trung bình
+                        </div>
+                        <div style="padding: 10px; background: #f8d7da; border-radius: 6px; text-align: center;">
+                            <strong style="color: #dc3545;">🔴 Đỏ</strong><br>Lệch nhiều
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 12px; border-left: 6px solid #ffc107;">
+                <h4 style="color: #856404; margin-top: 0;">⚠️ LưU Ý QUAN TRỌNG</h4>
+                <p style="margin: 10px 0;"><strong>📋 Kết quả này chỉ mang tính chất tham khảo</strong> và không thay thế cho việc khám bệnh chuyên khoa.</p>
+                <p style="margin: 10px 0;"><strong>👨‍⚕️ Vui lòng tham khảo ý kiến bác sĩ</strong> chuyên khoa cơ xương khớp hoặc phục hồi chức năng để được tư vấn và điều trị phù hợp.</p>
+                <p style="margin: 10px 0;"><strong>🔄 Nên thực hiện phân tích nhiều lần</strong> trong các điều kiện khác nhau để có kết quả chính xác nhất.</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+    
+    def create_session_name(self, patient_info):
+        """Create session name from patient information"""
+        import re
+        
+        name = patient_info.get('name', '').strip()
+        age = patient_info.get('age', 0)
+        gender = patient_info.get('gender', 'Nam')
+        
+        # Clean name for filename (remove special characters)
+        if name:
+            # Remove diacritics and special characters for filename safety
+            clean_name = re.sub(r'[^\w\s-]', '', name)
+            clean_name = re.sub(r'\s+', '_', clean_name)  # Replace spaces with underscores
+            session_name = f"{clean_name}_{age}tuoi_{gender}"
+        else:
+            session_name = f"BenhNhan_{age}tuoi_{gender}"
+        
+        return session_name
+    
+    def open_data_file(self, filename):
+        """Open data file with default system application"""
+        import os
+        import subprocess
+        import platform
+        
+        try:
+            if platform.system() == 'Windows':
+                os.startfile(filename)
+            elif platform.system() == 'Darwin':  # macOS
+                subprocess.call(['open', filename])
+            else:  # Linux
+                subprocess.call(['xdg-open', filename])
+        except Exception as e:
+            QMessageBox.warning(self, "Lỗi", f"Không thể mở file: {str(e)}")
+    
+    @pyqtSlot(str)
+    def view_history_file(self, file_path):
+        """View historical analysis file"""
+        try:
+            # Load and diagnose the historical file
+            diagnosis = self.gait_analyzer.load_and_diagnose(file_path)
             
             if diagnosis:
-                # Show the diagnosis dialog
+                # Show historical diagnosis results
                 self.show_comprehensive_diagnosis(diagnosis, file_path)
             else:
-                QMessageBox.warning(self, "Lỗi", "Không thể tải file lịch sử phân tích")
+                QMessageBox.warning(self, "Lỗi", 
+                                   f"Không thể đọc file lịch sử: {file_path}")
         except Exception as e:
-            QMessageBox.warning(self, "Lỗi", f"Lỗi khi xem file lịch sử: {str(e)}")
+            QMessageBox.critical(self, "Lỗi", 
+                               f"Lỗi khi mở file lịch sử:\n{str(e)}")
+    
+    def refresh_history_list(self):
+        """Refresh the history list in sidebar"""
+        if hasattr(self.sidebar, 'refresh_history_list'):
+            self.sidebar.refresh_history_list()
     
     def validate_patient_info(self, patient_info):
-        """Validate patient information"""
+        """Validate patient information before starting analysis"""
         errors = []
         
         # Check name
         name = patient_info.get("name", "").strip()
         if not name:
-            errors.append("• Tên bệnh nhân không được để trống")
+            errors.append("• Họ và tên không được để trống")
+        elif len(name) < 2:
+            errors.append("• Họ và tên phải có ít nhất 2 ký tự")
         
         # Check age
         age = patient_info.get("age", 0)
@@ -1061,16 +1357,35 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Handle application close"""
-        self.camera_thread.stop()
+        self.stop_analysis()
+        self.disconnect_camera()
         event.accept()
 
 
 def main():
+    """Main application entry point"""
+    # Enable high DPI scaling for better text readability (PyQt6)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
+    
     app = QApplication(sys.argv)
+    app.setApplicationName("GaitSenseAI")
+    app.setApplicationVersion(APP_SETTINGS["version"])
+    
+    # Set global font scaling for better readability
+    font = app.font()
+    font.setPointSize(font.pointSize() + 4)  # Tăng thêm 4 points cho rõ hơn
+    app.setFont(font)
+    
+    # Create and show main window
     window = MainWindow()
     window.show()
+    
+    # Start event loop
     sys.exit(app.exec())
 
 
 if __name__ == "__main__":
     main()
+

@@ -41,92 +41,37 @@ class NormativeGaitData:
     """
     
     def __init__(self):
-        # Dữ liệu góc khớp chuẩn (độ) - trung bình ± độ lệch chuẩn
-        # Nguồn: Winter (2009), CGA Database, Kadaba et al. (1990)
-        self.normative_angles = {
-            # Góc gối trong pha swing (knee flexion during swing) - Điều chỉnh cho người Việt Nam
-            "knee_flexion": {
-                # Nam (Male) - Điều chỉnh cho chiều cao trung bình 164.5cm và tốc độ đi bộ thấp
-                "male": {
-                    "young_adult": (58.2, 5.8),    # 18-35 tuổi, giảm do tốc độ thấp
-                    "middle_age": (55.1, 7.2),     # 36-55 tuổi  
-                    "older_adult": (52.0, 8.5)     # 56+ tuổi
-                },
-                # Nữ (Female) - Điều chỉnh cho chiều cao trung bình 154.4cm
-                "female": {
-                    "young_adult": (59.8, 5.5),
-                    "middle_age": (56.8, 6.8), 
-                    "older_adult": (53.5, 7.9)
-                }
-            },
-            # Góc hông tối đa trong stance (hip extension) - Điều chỉnh cho người Việt Nam
-            "hip_flexion": {
-                "male": {
-                    "young_adult": (18.8, 4.5),    # Giảm do tỷ lệ chân/người thấp hơn
-                    "middle_age": (17.2, 5.1),
-                    "older_adult": (15.5, 5.9)
-                },
-                "female": {
-                    "young_adult": (19.5, 4.0),
-                    "middle_age": (18.1, 4.6),
-                    "older_adult": (16.4, 5.4)
-                }
-            },
-            # Góc cổ chân tối đa (ankle dorsiflexion) - Điều chỉnh cho người Việt Nam
-            "ankle_dorsiflexion": {
-                "male": {
-                    "young_adult": (14.2, 3.0),    # Giảm do đặc điểm giải phẫu châu Á
-                    "middle_age": (12.8, 3.5),
-                    "older_adult": (11.2, 4.2)
-                },
-                "female": {
-                    "young_adult": (15.1, 2.7),
-                    "middle_age": (13.8, 3.1),
-                    "older_adult": (12.3, 3.8)
-                }
-            }
-        }
+        # Removed angle data - focusing only on simplified parameters
+        self.normative_angles = {}
         
-        # Dữ liệu thông số dáng đi chuẩn
+        # Dữ liệu thông số dáng đi chuẩn - Bao gồm tất cả metrics cần thiết
         # Nguồn: Hollman et al. (2011), Bohannon & Williams Andrews (2011)
         self.normative_parameters = {
-            "cadence": {  # Nhịp độ (bước/phút) - Điều chỉnh cho người Việt Nam đi bộ thường
-                "male": {
-                    "young_adult": (108.5, 8.5),   # Giảm do tốc độ đi bộ thấp
-                    "middle_age": (106.2, 9.2),    # Phù hợp với thói quen VN
-                    "older_adult": (102.8, 11.1)   # Người lớn tuổi đi chậm hơn
-                },
-                "female": {
-                    "young_adult": (112.8, 7.8),   # Nữ giới có cadence cao hơn nam
-                    "middle_age": (110.3, 8.6),    # Do bước chân ngắn hơn
-                    "older_adult": (106.9, 10.3)
-                }
-            },
             "stride_length": {  # Chiều dài bước (cm) - Điều chỉnh cho người Việt Nam
                 "male": {
-                    "young_adult": (125.8, 10.2),  # ~76% chiều cao 164.5cm, đi bộ thường
-                    "middle_age": (122.1, 11.5),   # Giảm theo tuổi tác
-                    "older_adult": (116.3, 14.8)   # Bước chân ngắn hơn do đi chậm
+                    "young_adult": (110.0, 12.0),  # ~67% chiều cao 164.5cm, đi bộ thường VN
+                    "middle_age": (105.0, 13.0),   # Giảm theo tuổi tác
+                    "older_adult": (95.0, 15.0)    # Bước chân ngắn hơn, an toàn hơn
                 },
                 "female": {
-                    "young_adult": (118.2, 8.9),   # ~76% chiều cao 154.4cm
-                    "middle_age": (115.6, 10.4),   # Phù hợp với thể trạng VN
-                    "older_adult": (110.8, 13.1)   # Bước chân an toàn hơn
+                    "young_adult": (100.0, 10.0),  # ~65% chiều cao 154.4cm
+                    "middle_age": (95.0, 12.0),    # Phù hợp với thói quen đi bộ VN
+                    "older_adult": (85.0, 14.0)    # Bước chân an toàn cho người cao tuổi
                 }
             },
             "walking_speed": {  # Tốc độ đi (m/s) - Điều chỉnh cho người Việt Nam và đi bộ thường
                 "male": {
-                    "young_adult": (1.15, 0.15),   # Giảm 15-20% do tốc độ đi bộ thấp
-                    "middle_age": (1.08, 0.18),    # Tốc độ tự nhiên cho đi bộ
-                    "older_adult": (0.95, 0.21)    # Phù hợp với người lớn tuổi VN
+                    "young_adult": (1.1, 0.2),     # Tốc độ đi bộ tự nhiên người VN
+                    "middle_age": (1.0, 0.2),      # Giảm nhẹ theo tuổi
+                    "older_adult": (0.8, 0.2)      # An toàn cho người cao tuổi
                 },
                 "female": {
-                    "young_adult": (1.12, 0.14),   # Điều chỉnh cho chiều cao thấp hơn
-                    "middle_age": (1.05, 0.16),
-                    "older_adult": (0.92, 0.19)
+                    "young_adult": (1.0, 0.2),     # Tốc độ phù hợp với người nữ VN
+                    "middle_age": (0.9, 0.2),      # Thói quen đi bộ thận trọng
+                    "older_adult": (0.7, 0.2)      # Ưu tiên an toàn
                 }
             },
-            "stance_phase_percentage": {  # % pha chống đỡ - Điều chỉnh cho đi bộ thường VN
+            "stance_phase_percentage": {  # % thời gian đặt chân - Điều chỉnh cho đi bộ thường VN
                 "male": {
                     "young_adult": (62.1, 1.9),    # Tăng do đi bộ chậm hơn
                     "middle_age": (63.2, 2.2),     # Thận trọng hơn theo tuổi
@@ -136,6 +81,30 @@ class NormativeGaitData:
                     "young_adult": (62.6, 1.7),    # Tương tự nam giới
                     "middle_age": (63.7, 2.0),     # Thói quen đi bộ thận trọng
                     "older_adult": (65.2, 2.6)     # Ưa thích sự ổn định
+                }
+            },
+            "foot_clearance": {  # Chiều cao nâng chân (cm) - Dữ liệu từ Winter et al.
+                "male": {
+                    "young_adult": (5.8, 1.2),     # Trung bình 5.8cm cho người trẻ VN
+                    "middle_age": (5.4, 1.3),      # Giảm nhẹ theo tuổi
+                    "older_adult": (4.8, 1.5)      # Thận trọng hơn, nâng chân thấp
+                },
+                "female": {
+                    "young_adult": (5.5, 1.1),     # Thấp hơn nam giới một chút
+                    "middle_age": (5.1, 1.2),      # Xu hướng đi bộ thận trọng
+                    "older_adult": (4.5, 1.4)      # Ưu tiên an toàn, tránh vấp
+                }
+            },
+            "step_width": {  # Chiều rộng bước (cm) - Dữ liệu từ Owings & Grabiner
+                "male": {
+                    "young_adult": (12.5, 2.8),    # Trung bình 12.5cm cho người VN
+                    "middle_age": (13.2, 3.0),     # Tăng nhẹ để ổn định
+                    "older_adult": (14.5, 3.5)     # Rộng hơn để thăng bằng tốt
+                },
+                "female": {
+                    "young_adult": (11.8, 2.5),    # Hẹp hơn nam giới
+                    "middle_age": (12.4, 2.7),     # Tăng theo tuổi tác
+                    "older_adult": (13.8, 3.2)     # Ưu tiên thăng bằng
                 }
             }
         }
@@ -355,19 +324,30 @@ class NormativeGaitData:
             'recommendations': []
         }
         
-        # Đánh giá từng thông số
+        # Đánh giá từng thông số cần thiết cho báo cáo chẩn đoán
         parameters_to_assess = [
-            'knee_flexion', 'hip_flexion', 'ankle_dorsiflexion',
-            'cadence', 'stride_length', 'walking_speed', 'stance_phase_percentage'
+            'stride_length', 'walking_speed', 'stance_phase_percentage',
+            'foot_clearance', 'step_width'
         ]
         
         total_severity = 0
         count = 0
         
         for param in parameters_to_assess:
-            if param in measured_data:
+            if param in measured_data and measured_data[param] > 0:
                 result = self.assess_parameter(param, measured_data[param], age, gender)
-                assessment['individual_assessments'][param] = result
+                
+                # Map parameter names to Vietnamese display names for diagnosis report
+                param_display_names = {
+                    'stride_length': 'Chiều Dài Bước',
+                    'walking_speed': 'Tốc Độ Đi', 
+                    'stance_phase_percentage': 'Thời Gian Đặt Chân',
+                    'foot_clearance': 'Chiều Cao Nâng Chân',
+                    'step_width': 'Chiều Rộng Bước'
+                }
+                
+                display_name = param_display_names.get(param, param)
+                assessment['individual_assessments'][display_name] = result
                 
                 # Tích luỹ điểm nghiêm trọng
                 severity_map = {'normal': 0, 'mild': 1, 'moderate': 2, 'severe': 3}

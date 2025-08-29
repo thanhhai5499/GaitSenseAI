@@ -79,9 +79,9 @@ class GaitMetricsPanel(QGroupBox):
         self.metrics = {
             "step_count": MetricCard("Số bước", "0", "bước"),
             "cadence": MetricCard("Tần số bước", "0.0", "bước/phút"),
-            "stride_length": MetricCard("Độ dài bước", "0.0", "px"),
+            "stride_length": MetricCard("Độ dài bước", "0.0", "cm"),
             "step_time": MetricCard("Thời gian bước", "0.00", "giây"),
-            "walking_speed": MetricCard("Tốc độ đi", "0.0", "px/s"),
+            "walking_speed": MetricCard("Tốc độ đi", "0.0", "m/s"),
             "foot_angle_left": MetricCard("Góc chân trái", "0.0", "°"),
             "foot_angle_right": MetricCard("Góc chân phải", "0.0", "°"),
         }
@@ -100,9 +100,9 @@ class GaitMetricsPanel(QGroupBox):
         metric_mapping = {
             "Số bước": ("step_count", "bước"),
             "Tần số bước (bước/phút)": ("cadence", "bước/phút"),
-            "Độ dài bước (px)": ("stride_length", "px"),
+            "Độ dài bước (cm)": ("stride_length", "cm"),
             "Thời gian bước (s)": ("step_time", "giây"),
-            "Tốc độ đi (px/s)": ("walking_speed", "px/s"),
+            "Tốc độ đi (m/s)": ("walking_speed", "m/s"),
             "Góc chân trái (°)": ("foot_angle_left", "°"),
             "Góc chân phải (°)": ("foot_angle_right", "°"),
         }

@@ -272,7 +272,7 @@ class RealSenseSidebar(QWidget):
     
     def setup_ui(self):
         """Setup the RealSense style interface"""
-        self.setFixedWidth(420)
+        self.setFixedWidth(550)
         self.setStyleSheet("""
             QWidget {
                 background-color: #f8f8f8;
@@ -417,7 +417,7 @@ class RealSenseSidebar(QWidget):
         name_label.setStyleSheet("color: #000000; font-weight: bold; font-size: 14px;")
         
         self.patient_name_input = QLineEdit()
-        self.patient_name_input.setPlaceholderText("Nhập họ và tên bệnh nhân...")
+        self.patient_name_input.setPlaceholderText("Nhập họ và tên người cần đo...")
         self.patient_name_input.setStyleSheet("""
             QLineEdit {
                 background-color: #ffffff;
@@ -948,12 +948,12 @@ class RealSenseSidebar(QWidget):
             
             label = QLabel(label_text)
             if label_text and any(char.isdigit() for char in label_text[:2]):  # If starts with number (1., 2., etc.)
-                label.setStyleSheet("color: #0078d4; font-size: 16px; font-weight: bold; padding: 2px 0px;")
+                label.setStyleSheet("color: #0078d4; font-size: 18px; font-weight: bold; padding: 2px 0px;")
             else:
-                label.setStyleSheet("color: #333333; font-size: 15px; padding: 2px 0px;")
+                label.setStyleSheet("color: #333333; font-size: 17px; padding: 2px 0px;")
             
             value = QLabel(value_text)
-            value.setStyleSheet(f"color: {value_color}; font-weight: bold; font-size: 16px; padding: 2px 0px;")
+            value.setStyleSheet(f"color: {value_color}; font-weight: bold; font-size: 18px; padding: 2px 0px;")
             
             row_layout.addWidget(label)
             row_layout.addStretch()
@@ -964,7 +964,7 @@ class RealSenseSidebar(QWidget):
         # Helper function to create section headers
         def create_section_header(title):
             header = QLabel(title)
-            header.setStyleSheet("color: #000000; font-weight: bold; font-size: 12px; margin: 4px 0px 2px 0px;")
+            header.setStyleSheet("color: #000000; font-weight: bold; font-size: 14px; margin: 4px 0px 2px 0px;")
             return header
         
         # 1. Thông số góc khớp
@@ -988,15 +988,15 @@ class RealSenseSidebar(QWidget):
         main_layout.addWidget(create_section_header("Thông số vị trí và khoảng cách:"))
         
         # 4. Chiều cao nâng chân (Foot Clearance)
-        foot_clearance_row, self.foot_clearance_value = create_compact_row("4. Chiều cao nâng chân (Foot Clearance):", "0 cm", "#0078d4")
+        foot_clearance_row, self.foot_clearance_value = create_compact_row("4. Chiều cao nâng chân (Foot Clearance):", "0.0 cm", "#0078d4")
         main_layout.addLayout(foot_clearance_row)
         
         # 5. Chiều dài bước (Step Length)
-        step_length_row, self.step_length_value = create_compact_row("5. Chiều dài bước (Step Length):", "0 cm", "#0078d4")
+        step_length_row, self.step_length_value = create_compact_row("5. Chiều dài bước (Step Length):", "0.0 cm", "#0078d4")
         main_layout.addLayout(step_length_row)
         
         # 6. Chiều rộng bước (Step Width)
-        step_width_row, self.step_width_value = create_compact_row("6. Chiều rộng bước (Step Width):", "0 cm", "#0078d4")
+        step_width_row, self.step_width_value = create_compact_row("6. Chiều rộng bước (Step Width):", "0.0 cm", "#0078d4")
         main_layout.addLayout(step_width_row)
         
         main_layout.addSpacing(4)
@@ -1152,28 +1152,30 @@ class RealSenseSidebar(QWidget):
         else:
             self.ankle_angle_value.setText("0°")
         
-        # Update Position & Distance metrics
-        foot_clearance = metrics.get('foot_clearance_left', 0)
-        if foot_clearance > 0:
-            # Convert pixel to approximate cm (rough estimation)
-            clearance_cm = foot_clearance / 30  # Rough pixel to cm conversion
-            self.foot_clearance_value.setText(f"{clearance_cm:.1f} cm")
-        else:
-            self.foot_clearance_value.setText("0 cm")
+        # Update Position & Distance metrics (now properly converted to cm)
+        # Show maximum foot clearance from both feet for more accurate reading
+        foot_clearance_left = metrics.get('foot_clearance_left', 0)
+        foot_clearance_right = metrics.get('foot_clearance_right', 0)
+        max_foot_clearance = max(foot_clearance_left, foot_clearance_right)
         
-        step_length = metrics.get('step_length', 0)
+        if max_foot_clearance > 0:
+            self.foot_clearance_value.setText(f"{max_foot_clearance:.1f} cm")
+        else:
+            self.foot_clearance_value.setText("0.0 cm")
+        
+        # Use stride_length from metrics (already in cm)
+        step_length = metrics.get('stride_length', 0)
         if step_length > 0:
-            length_cm = step_length / 10  # Rough conversion
-            self.step_length_value.setText(f"{length_cm:.1f} cm")
+            self.step_length_value.setText(f"{step_length:.1f} cm")
         else:
-            self.step_length_value.setText("0 cm")
+            self.step_length_value.setText("0.0 cm")
         
-        step_width = metrics.get('step_width', 0)
+        # Use step_width_current from metrics (already in cm)
+        step_width = metrics.get('step_width_current', 0)
         if step_width > 0:
-            width_cm = step_width / 10  # Rough conversion
-            self.step_width_value.setText(f"{width_cm:.1f} cm")
+            self.step_width_value.setText(f"{step_width:.1f} cm")
         else:
-            self.step_width_value.setText("0 cm")
+            self.step_width_value.setText("0.0 cm")
         
         # Update Timing metrics
         stance_phase = metrics.get('stance_phase', 0)
