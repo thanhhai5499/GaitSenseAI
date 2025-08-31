@@ -518,13 +518,27 @@ class MainWindow(QMainWindow):
         
         # Create dialog
         dialog = QDialog(self)
-        dialog.setWindowTitle("GaitSenseAI")
+        dialog.setWindowTitle("Báo Cáo Chuẩn Đoán Dáng Đi - GaitSenseAI")
         dialog.setModal(True)
         dialog.resize(1200, 800)
         
         layout = QVBoxLayout()
         layout.setSpacing(15)
         layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Header
+        header = QLabel("BÁO CÁO CHUẨN ĐOÁN DÁNG ĐI")
+        header.setStyleSheet("""
+            font-size: 28px; 
+            font-weight: bold; 
+            color: #0078d4; 
+            padding: 20px; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            margin-bottom: 10px;
+        """)
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(header)
         
         # Content area
         content = QTextEdit()
@@ -668,25 +682,6 @@ class MainWindow(QMainWindow):
                     box-shadow: 0 4px 15px rgba(0,120,212,0.3);
                     text-align: center;
                 }}
-                .patient-info {{
-                    margin-top: 20px;
-                    font-size: 18px;
-                    text-align: left !important;
-                    color: black !important;
-                }}
-                .patient-info p {{
-                    color: black !important;
-                    text-align: left !important;
-                    margin: 5px 0;
-                }}
-                .patient-info strong {{
-                    color: black !important;
-                    font-weight: bold;
-                }}
-                .header h2 {{
-                    color: black !important;
-                    text-shadow: none !important;
-                }}
                 .section {{ 
                     margin: 20px 0; 
                     padding: 25px; 
@@ -790,6 +785,7 @@ class MainWindow(QMainWindow):
                     text-align: center;
                     margin: 20px 0;
                 }}
+                h2 {{ font-size: 24px; margin: 15px 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
                 h3 {{ font-size: 18px; margin: 12px 0; color: #495057; }}
                 strong {{ font-weight: bold; color: #212529; }}
             </style>
@@ -797,7 +793,7 @@ class MainWindow(QMainWindow):
         <body>
             <div class="header">
                 <h2>BÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
-                <div class="patient-info">
+                <div style="margin-top: 20px; font-size: 18px;">
                     <p><strong>Người Đo:</strong> {diagnosis.get('patient_name', 'N/A')} - {diagnosis.get('patient_age', 'N/A')} tuổi ({diagnosis.get('patient_gender', 'N/A')})</p>
                     <p><strong>Thời gian:</strong> {diagnosis.get('session_date', 'N/A')}</p>
                 </div>
@@ -809,23 +805,12 @@ class MainWindow(QMainWindow):
         
         # Tóm tắt tổng quan
         overall_score = diagnosis.get('severity_score', 0)
-        
-        # Determine status based on score ranges (supports decimal values)
-        def get_status_info(score):
-            if score < 0.5:
-                return 'BÌNH THƯỜNG', '#28a745', 'normal'
-            elif score < 1.5:
-                return 'CẦN CHÚ Ý', '#ffc107', 'mild'
-            elif score < 2.5:
-                return 'CẦN ĐIỀU TRỊ', '#fd7e14', 'moderate'
-            else:
-                return 'NGHIÊM TRỌNG', '#dc3545', 'severe'
-        
-        status_text, status_color, status_class = get_status_info(overall_score)
+        status_colors = {0: '#28a745', 1: '#ffc107', 2: '#fd7e14', 3: '#dc3545'}
+        status_texts = {0: 'BÌNH THƯỜNG', 1: 'CẦN CHÚ Ý', 2: 'CẦN ĐIỀU TRỊ', 3: 'NGHIÊM TRỌNG'}
         
         html += f"""
-                <div class="overall-status" style="background: {status_color}; color: white;">
-                    {status_text} - Điểm số: {overall_score}/3
+                <div class="overall-status" style="background: {status_colors.get(overall_score, '#6c757d')}; color: white;">
+                    {status_texts.get(overall_score, 'KHÔNG XÁC ĐỊNH')} - Điểm số: {overall_score}/3
                 </div>
                 <div class="summary-card">
                     <h3>📋 Đánh giá tổng thể:</h3>
@@ -925,11 +910,8 @@ class MainWindow(QMainWindow):
         ]
         
         for param_name, unit in general_params:
-            print(f"🔍 Debug - Checking param: {param_name}")
-            print(f"🔍 Debug - Available findings keys: {list(findings.keys())}")
             if param_name in findings:
                 data = findings[param_name]
-                print(f"🔍 Debug - Data for {param_name}: {data}")
                 measured = data.get('measured_value', 0)
                 norm_mean = data.get('normative_mean', 0)
                 norm_std = data.get('normative_std', 0)
@@ -951,9 +933,6 @@ class MainWindow(QMainWindow):
                         <td style="color: {color}; font-weight: bold;">{status}</td>
                     </tr>
                 """
-                print(f"✅ Added row for {param_name}: measured={measured}, status={status}")
-            else:
-                print(f"❌ {param_name} not found in findings")
         
         html += """
                     </tbody>
