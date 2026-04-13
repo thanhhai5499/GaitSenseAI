@@ -48,16 +48,20 @@ def generate_new_diagnosis_report(self, diagnosis, data_file):
             .patient-info {{
                 margin-top: 20px;
                 font-size: 18px;
-                text-align: left !important;
-                color: black !important;
+                color: #212529;
+                background: rgba(255,255,255,0.95);
+                padding: 15px;
+                border-radius: 10px;
+                text-align: left;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             }}
             .patient-info p {{
-                color: black !important;
-                text-align: left !important;
+                color: #212529;
+                text-align: left;
                 margin: 5px 0;
             }}
             .patient-info strong {{
-                color: black !important;
+                color: #0078d4;
                 font-weight: bold;
             }}
             .section {{ 
@@ -167,7 +171,7 @@ def generate_new_diagnosis_report(self, diagnosis, data_file):
                 text-align: center;
                 margin: 20px 0;
             }}
-            h2 {{ font-size: 24px; margin: 15px 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
+            h2 {{ font-size: 24px; margin: 15px 0; color: #212529; text-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold; }}
             h3 {{ font-size: 18px; margin: 12px 0; color: #495057; }}
             strong {{ font-weight: bold; color: #212529; }}
         </style>

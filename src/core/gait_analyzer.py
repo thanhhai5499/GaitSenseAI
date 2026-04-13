@@ -376,18 +376,32 @@ class GaitAnalyzer:
                 points['right_hip'], points['right_knee'], points['right_ankle']
             )
         
-        # 2. Hip Angles (shoulder-hip-knee) 
+        # 2. Hip Angles (shoulder-hip-knee) with fallback to neck if shoulder missing
+        # Left side
         if all(k in points for k in ['left_shoulder', 'left_hip', 'left_knee']):
+            proximal_left = points['left_shoulder']
+        elif all(k in points for k in ['neck', 'left_hip', 'left_knee']):
+            proximal_left = points['neck']
+        else:
+            proximal_left = None
+        if proximal_left is not None and all(k in points for k in ['left_hip', 'left_knee']):
             angles['hip_left'] = self.calculate_angle(
-                points['left_shoulder'], points['left_hip'], points['left_knee']
+                proximal_left, points['left_hip'], points['left_knee']
             )
         
+        # Right side
         if all(k in points for k in ['right_shoulder', 'right_hip', 'right_knee']):
+            proximal_right = points['right_shoulder']
+        elif all(k in points for k in ['neck', 'right_hip', 'right_knee']):
+            proximal_right = points['neck']
+        else:
+            proximal_right = None
+        if proximal_right is not None and all(k in points for k in ['right_hip', 'right_knee']):
             angles['hip_right'] = self.calculate_angle(
-                points['right_shoulder'], points['right_hip'], points['right_knee']
+                proximal_right, points['right_hip'], points['right_knee']
             )
         
-        # 3. Ankle Angles (knee-ankle-toe)
+            # 3. Ankle Angles (knee-ankle-toe)
         if all(k in points for k in ['left_knee', 'left_ankle', 'left_toe']):
             angles['ankle_left'] = self.calculate_angle(
                 points['left_knee'], points['left_ankle'], points['left_toe']
@@ -846,7 +860,10 @@ class GaitAnalyzer:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{results_dir}/{session_name}_{timestamp}.txt"
         
-        # Prepare data for export - CHỈ LƯU RAW DATA, KHÔNG LƯU PHÂN TÍCH
+        # Prepare data for export - LƯU BOTH RAW DATA VÀ CALCULATED METRICS
+        # Get current analysis results để lưu vào file
+        current_metrics = self.get_analysis_summary()
+        
         export_data = {
             "patient_info": patient_info or {
                 "name": "Unknown",
@@ -868,8 +885,27 @@ class GaitAnalyzer:
                 "left_ankle": self.left_joint_angles["ankle"],
                 "right_ankle": self.right_joint_angles["ankle"]
             },
-            "raw_landmark_history": self.landmark_history  # Thêm landmark history để tính toán lại
-            # ❌ KHÔNG LƯU: final_metrics, bilateral_comparison - sẽ tính toán lại khi mở báo cáo
+            # Lưu thêm phiên bản góc đã chuyển đổi (180° - góc đo) để dùng trực tiếp trong báo cáo
+            "converted_joint_angles": {
+                "left_knee": [max(0.0, 180.0 - float(v)) for v in self.left_joint_angles["knee"]],
+                "right_knee": [max(0.0, 180.0 - float(v)) for v in self.right_joint_angles["knee"]],
+                "left_hip": [max(0.0, 180.0 - float(v)) for v in self.left_joint_angles["hip"]],
+                "right_hip": [max(0.0, 180.0 - float(v)) for v in self.right_joint_angles["hip"]],
+                "left_ankle": [max(0.0, 180.0 - float(v)) for v in self.left_joint_angles["ankle"]],
+                "right_ankle": [max(0.0, 180.0 - float(v)) for v in self.right_joint_angles["ankle"]]
+            },
+            "raw_landmark_history": self.landmark_history,  # Thêm landmark history để tính toán lại
+            # ✅ THÊM: Lưu calculated metrics để sử dụng trong báo cáo
+            "calculated_metrics": {
+                "stride_length": current_metrics.get("stride_length", 0),  # cm
+                "walking_speed": current_metrics.get("walking_speed", 0),  # m/s  
+                "stance_phase": current_metrics.get("stance_phase", 0),    # %
+                "foot_clearance_left": current_metrics.get("foot_clearance_left", 0),  # cm
+                "foot_clearance_right": current_metrics.get("foot_clearance_right", 0), # cm
+                "step_width_current": current_metrics.get("step_width_current", 0),     # cm
+                "cadence": current_metrics.get("cadence", 0),              # steps/min
+                "step_count": current_metrics.get("step_count", 0)
+            }
         }
         
         # Write to file
@@ -896,17 +932,22 @@ class GaitAnalyzer:
                 f.write(f"Session Duration: {export_data['session_info']['session_duration_seconds']} seconds\n")
                 f.write(f"Analysis FPS: {export_data['session_info']['fps']}\n\n")
                 
-                # Raw data statistics
-                f.write("📈 RAW DATA STATISTICS:\n")
-                for joint, angles in export_data['raw_joint_angles'].items():
+                # Converted joint angle statistics (biên độ = 180° - raw)
+                f.write("📈 JOINT RANGE OF MOTION (Converted: 180° - raw):\n")
+                for joint, angles in export_data['converted_joint_angles'].items():
                     if angles:
                         import numpy as np
-                        f.write(f"{joint.replace('_', ' ').title()}:\n")
-                        f.write(f"  - Sample Count: {len(angles)}\n")
-                        f.write(f"  - Average: {np.mean(angles):.2f}°\n")
-                        f.write(f"  - Min: {np.min(angles):.2f}°\n")
-                        f.write(f"  - Max: {np.max(angles):.2f}°\n")
-                        f.write(f"  - Std Dev: {np.std(angles):.2f}°\n\n")
+                        vn = {
+                            'left_knee': 'Gối trái', 'right_knee': 'Gối phải',
+                            'left_hip': 'Hông trái', 'right_hip': 'Hông phải',
+                            'left_ankle': 'Cổ chân trái', 'right_ankle': 'Cổ chân phải'
+                        }.get(joint, joint.replace('_',' ').title())
+                        f.write(f"{vn}:\n")
+                        f.write(f"  - Mẫu: {len(angles)}\n")
+                        f.write(f"  - Trung bình: {np.mean(angles):.2f}°\n")
+                        f.write(f"  - Nhỏ nhất: {np.min(angles):.2f}°\n")
+                        f.write(f"  - Lớn nhất: {np.max(angles):.2f}°\n")
+                        f.write(f"  - Độ lệch chuẩn: {np.std(angles):.2f}°\n\n")
                 
                 # Lưu ý: Không lưu analysis results - sẽ tính toán lại khi mở báo cáo
                 f.write("💡 LƯU Ý QUAN TRỌNG:\n")
@@ -914,11 +955,10 @@ class GaitAnalyzer:
                 f.write("Phân tích và chẩn đoán sẽ được tính toán lại khi mở báo cáo.\n")
                 f.write("Điều này đảm bảo sử dụng dữ liệu chuẩn mới nhất và thuật toán cập nhật.\n\n")
                 
-                # Raw angle data (chỉ để tham khảo)
-                f.write("📊 DỮ LIỆU GÓC KHỚP THÔ:\n")
-                f.write("(Sẽ được phân tích chi tiết khi tạo báo cáo chẩn đoán)\n\n")
-                
-                for joint, angles in export_data['raw_joint_angles'].items():
+                # Converted angle samples (hiển thị phần tử đầu)
+                f.write("📊 MẪU GÓC ĐÃ CHUYỂN (180° - raw):\n")
+                f.write("(Dùng trực tiếp cho báo cáo)\n\n")
+                for joint, angles in export_data['converted_joint_angles'].items():
                     if angles:
                         sample_size = min(10, len(angles))  # Chỉ hiển thị 10 mẫu đầu
                         f.write(f"{joint.replace('_', ' ').title()} (mẫu): {angles[:sample_size]}...\n")
@@ -994,6 +1034,13 @@ class GaitAnalyzer:
         
         results = {}
         
+        # Ưu tiên dùng converted_joint_angles nếu có, nếu không thì dùng raw_joint_angles và chuyển đổi tại chỗ
+        converted = raw_angles
+        if 'converted' in raw_angles:
+            # Not expected format; keep for backward compat if ever used
+            converted = raw_angles['converted']
+        
+        
         # Tính toán cho từng khớp
         joints = ["knee", "hip", "ankle"]
         
@@ -1001,22 +1048,29 @@ class GaitAnalyzer:
             left_key = f"left_{joint}"
             right_key = f"right_{joint}"
             
-            left_angles = raw_angles.get(left_key, [])
-            right_angles = raw_angles.get(right_key, [])
+            left_angles = converted.get(left_key, [])
+            right_angles = converted.get(right_key, [])
             
-            if left_angles and right_angles:
-                left_avg = np.mean(left_angles)
-                right_avg = np.mean(right_angles)
+            # Dữ liệu đã ở dạng converted (180 - x); không chuyển đổi lại để tránh double-convert
+            # Lọc dữ liệu nhiễu: bỏ giá trị <=0 và không phải số
+            left_valid = [float(v) for v in left_angles if isinstance(v, (int, float)) and float(v) > 0]
+            right_valid = [float(v) for v in right_angles if isinstance(v, (int, float)) and float(v) > 0]
+            
+            # Yêu cầu tối thiểu 3 mẫu hợp lệ mỗi bên để đảm bảo tin cậy
+            if len(left_valid) >= 3 and len(right_valid) >= 3:
+                # Dùng median để giảm ảnh hưởng outlier
+                left_avg = float(np.median(left_valid))
+                right_avg = float(np.median(right_valid))
                 difference = abs(left_avg - right_avg)
                 
                 results[f"{joint}_angle_left_avg"] = left_avg
                 results[f"{joint}_angle_right_avg"] = right_avg
                 results[f"{joint}_angle_difference"] = difference
                 
-                # Tính asymmetry percentage
-                max_angle = max(left_avg, right_avg)
-                if max_angle > 0:
-                    asymmetry_percent = (difference / max_angle) * 100
+                # Robinson Symmetry Index: |L - R| / ((L + R)/2) * 100
+                denom = (left_avg + right_avg) / 2.0
+                if denom > 0:
+                    asymmetry_percent = (difference / denom) * 100.0
                     results[f"{joint}_asymmetry_percent"] = asymmetry_percent
                 else:
                     results[f"{joint}_asymmetry_percent"] = 0.0
@@ -1038,22 +1092,39 @@ class GaitAnalyzer:
         return results
     
     @staticmethod
-    def _recalculate_final_metrics(raw_angles, landmark_history):
-        """Tính toán lại final metrics từ raw data"""
+    def _recalculate_final_metrics(raw_angles, landmark_history, calculated_metrics=None):
+        """Tính toán lại final metrics từ raw data và calculated metrics"""
         import numpy as np
         
-        metrics = {
-            # Tính toán cơ bản từ raw angles
-            "stride_length": 100.0,  # Default, có thể tính từ landmark_history
-            "walking_speed": 1.0,    # Default, có thể tính từ landmark_history  
-            "stance_phase": 62.0,    # Default
-            "cadence": 110.0,        # Default
-            "step_count": 0,         # Sẽ tính từ landmark_history
-            "symmetry_index": 0.0,   # Sẽ tính từ bilateral comparison
-            "foot_clearance_left": 5.5,   # Default
-            "foot_clearance_right": 5.5,  # Default
-            "step_width_current": 12.0     # Default
-        }
+        # ✅ SỬ DỤNG CALCULATED METRICS TỪ FILE THAY VÌ DEFAULT VALUES
+        if calculated_metrics:
+            print(f"✅ Sử dụng calculated_metrics từ file: {calculated_metrics}")
+            metrics = {
+                # Sử dụng dữ liệu thực tế từ file
+                "stride_length": calculated_metrics.get("stride_length", 100.0),      # cm
+                "walking_speed": calculated_metrics.get("walking_speed", 1.0),       # m/s  
+                "stance_phase": calculated_metrics.get("stance_phase", 62.0),        # %
+                "cadence": calculated_metrics.get("cadence", 110.0),                 # steps/min
+                "step_count": calculated_metrics.get("step_count", 0),               # count
+                "symmetry_index": 0.0,   # Sẽ tính từ bilateral comparison
+                "foot_clearance_left": calculated_metrics.get("foot_clearance_left", 5.5),   # cm
+                "foot_clearance_right": calculated_metrics.get("foot_clearance_right", 5.5), # cm
+                "step_width_current": calculated_metrics.get("step_width_current", 12.0)     # cm
+            }
+        else:
+            print("⚠️ Không có calculated_metrics, sử dụng default values")
+            metrics = {
+                # Default values khi không có dữ liệu
+                "stride_length": 100.0,  # Default, có thể tính từ landmark_history
+                "walking_speed": 1.0,    # Default, có thể tính từ landmark_history  
+                "stance_phase": 62.0,    # Default
+                "cadence": 110.0,        # Default
+                "step_count": 0,         # Sẽ tính từ landmark_history
+                "symmetry_index": 0.0,   # Sẽ tính từ bilateral comparison
+                "foot_clearance_left": 5.5,   # Default
+                "foot_clearance_right": 5.5,  # Default
+                "step_width_current": 12.0     # Default
+            }
         
         # Tính toán chi tiết từ landmark_history nếu có
         if landmark_history:
@@ -1164,15 +1235,28 @@ class GaitAnalyzer:
         }
         
         # Extract raw data và tính toán lại analysis
-        raw_angles = data.get('raw_joint_angles', {})
+        raw_angles_original = data.get('raw_joint_angles', {})
+        converted_angles = data.get('converted_joint_angles')
+        # Ưu tiên dùng góc đã chuyển đổi; nếu không có thì chuyển từ raw (180 - x)
+        if converted_angles and isinstance(converted_angles, dict):
+            raw_angles = converted_angles
+        else:
+            raw_angles = {}
+            for k, arr in raw_angles_original.items():
+                try:
+                    raw_angles[k] = [max(0.0, 180.0 - float(v)) for v in arr]
+                except Exception:
+                    raw_angles[k] = arr
         landmark_history = data.get('raw_landmark_history', [])
+        calculated_metrics = data.get('calculated_metrics', {})  # ✅ THÊM: Lấy calculated metrics từ file
         
-        # TÍNH TOÁN LẠI TẤT CẢ METRICS TỪ RAW DATA
+        # TÍNH TOÁN LẠI TẤT CẢ METRICS TỪ RAW DATA + CALCULATED METRICS
         print(f"🔍 Debug: raw_angles keys: {list(raw_angles.keys())}")
         print(f"🔍 Debug: landmark_history length: {len(landmark_history) if landmark_history else 0}")
+        print(f"🔍 Debug: calculated_metrics: {calculated_metrics}")
         
         bilateral = GaitAnalyzer._recalculate_bilateral_comparison(raw_angles)
-        final_metrics = GaitAnalyzer._recalculate_final_metrics(raw_angles, landmark_history)
+        final_metrics = GaitAnalyzer._recalculate_final_metrics(raw_angles, landmark_history, calculated_metrics)
         
         print(f"🔍 Debug: final_metrics: {final_metrics}")
         
@@ -1198,13 +1282,13 @@ class GaitAnalyzer:
                 ) if max(final_metrics.get('foot_clearance_left', 0), final_metrics.get('foot_clearance_right', 0)) > 0 else 5.5,  # cm
                 'step_width': final_metrics.get('step_width_current', 0) if final_metrics.get('step_width_current', 0) > 0 else 12.0,  # cm
                 
-                # Joint data for asymmetry calculation (only include if we have meaningful measurements)
-                'left_knee': bilateral.get('knee_angle_left_avg', 0) if bilateral.get('knee_angle_left_avg', 0) > 5 else 0,
-                'right_knee': bilateral.get('knee_angle_right_avg', 0) if bilateral.get('knee_angle_right_avg', 0) > 5 else 0,
-                'left_hip': bilateral.get('hip_angle_left_avg', 0) if bilateral.get('hip_angle_left_avg', 0) > 5 else 0,
-                'right_hip': bilateral.get('hip_angle_right_avg', 0) if bilateral.get('hip_angle_right_avg', 0) > 5 else 0,
-                'left_ankle': bilateral.get('ankle_angle_left_avg', 0) if bilateral.get('ankle_angle_left_avg', 0) > 5 else 0,
-                'right_ankle': bilateral.get('ankle_angle_right_avg', 0) if bilateral.get('ankle_angle_right_avg', 0) > 5 else 0
+                # Joint data for asymmetry calculation (use any positive measurement)
+                'left_knee': bilateral.get('knee_angle_left_avg', 0) if bilateral.get('knee_angle_left_avg', 0) > 0 else 0,
+                'right_knee': bilateral.get('knee_angle_right_avg', 0) if bilateral.get('knee_angle_right_avg', 0) > 0 else 0,
+                'left_hip': bilateral.get('hip_angle_left_avg', 0) if bilateral.get('hip_angle_left_avg', 0) > 0 else 0,
+                'right_hip': bilateral.get('hip_angle_right_avg', 0) if bilateral.get('hip_angle_right_avg', 0) > 0 else 0,
+                'left_ankle': bilateral.get('ankle_angle_left_avg', 0) if bilateral.get('ankle_angle_left_avg', 0) > 0 else 0,
+                'right_ankle': bilateral.get('ankle_angle_right_avg', 0) if bilateral.get('ankle_angle_right_avg', 0) > 0 else 0
             }
             
             # Get comprehensive assessment
@@ -1250,8 +1334,19 @@ class GaitAnalyzer:
                     'severe': 'NẶNG'
                 }
                 
-                # Get the actual measured value for display
-                measured_value = measured_data.get(param, 0)
+                # ✅ SỬA LỖI MAPPING: Map Vietnamese param names back to English keys
+                param_mapping = {
+                    'Chiều Dài Bước': 'stride_length',
+                    'Tốc Độ Đi': 'walking_speed', 
+                    'Thời Gian Đặt Chân': 'stance_phase_percentage',
+                    'Chiều Cao Nâng Chân': 'foot_clearance',
+                    'Chiều Rộng Bước': 'step_width'
+                }
+                
+                # Get English parameter name
+                english_param = param_mapping.get(param, param)
+                measured_value = measured_data.get(english_param, 0)
+                    
                 
                 # Map parameter names to Vietnamese display names
                 display_names = {
@@ -1274,6 +1369,43 @@ class GaitAnalyzer:
                     'measured_value': measured_value,
                     'unit': unit
                 }
+            
+            # Thêm mục Biên độ lệch góc so với chuẩn (dùng góc đã chuyển đổi 180-x)
+            angle_normatives = {
+                'Góc Gối': {'mean': 60.0, 'std': 10.0},
+                'Góc Hông': {'mean': 30.0, 'std': 7.0},
+                'Góc Cổ Chân': {'mean': 10.0, 'std': 4.0},
+            }
+            angle_units = '°'
+            # Lấy trung bình góc đã chuyển đổi từ bilateral (đã chuyển 180-x trong tính toán trước đó)
+            knee_avg = (bilateral.get('knee_angle_left_avg', 0) + bilateral.get('knee_angle_right_avg', 0)) / 2 if (bilateral.get('knee_angle_left_avg', 0) > 0 and bilateral.get('knee_angle_right_avg', 0) > 0) else max(bilateral.get('knee_angle_left_avg', 0), bilateral.get('knee_angle_right_avg', 0))
+            hip_avg = (bilateral.get('hip_angle_left_avg', 0) + bilateral.get('hip_angle_right_avg', 0)) / 2 if (bilateral.get('hip_angle_left_avg', 0) > 0 and bilateral.get('hip_angle_right_avg', 0) > 0) else max(bilateral.get('hip_angle_left_avg', 0), bilateral.get('hip_angle_right_avg', 0))
+            ankle_avg = (bilateral.get('ankle_angle_left_avg', 0) + bilateral.get('ankle_angle_right_avg', 0)) / 2 if (bilateral.get('ankle_angle_left_avg', 0) > 0 and bilateral.get('ankle_angle_right_avg', 0) > 0) else max(bilateral.get('ankle_angle_left_avg', 0), bilateral.get('ankle_angle_right_avg', 0))
+            angle_map = {'Góc Gối': knee_avg, 'Góc Hông': hip_avg, 'Góc Cổ Chân': ankle_avg}
+            
+            for vn_name, measured in angle_map.items():
+                norm = angle_normatives[vn_name]
+                mean = norm['mean']
+                std = norm['std']
+                if measured and mean and std:
+                    deviation_index = abs(measured - mean) / std
+                    # map status theo mức lệch
+                    if deviation_index <= 1.0:
+                        status = 'BÌNH THƯỜNG'
+                    elif deviation_index <= 2.0:
+                        status = 'NHẸ'
+                    elif deviation_index <= 2.5:
+                        status = 'TRUNG BÌNH'
+                    else:
+                        status = 'NẶNG'
+                    diagnosis['detailed_findings'][vn_name] = {
+                        'status': status,
+                        'deviation_index': round(deviation_index, 2),
+                        'normative_mean': mean,
+                        'normative_std': std,
+                        'measured_value': measured,
+                        'unit': angle_units
+                    }
             
             # Add asymmetry assessments
             for joint, assessment in normative_assessment['asymmetry_assessments'].items():
@@ -1452,7 +1584,7 @@ class GaitAnalyzer:
         print(f"🔍 Debug: final_metrics = {final_metrics}")
         
         # Use actual measured values from final_metrics, with realistic fallbacks
-        # Based on the file data we saw: step_width: 21.17 cm, foot_clearance_left: 11.37 cm, foot_clearance_right: 9.04 cm
+        print(f"🔍 Debug: final_metrics trong fallback = {final_metrics}")
         actual_measurements = {
             'Tốc Độ Đi': {
                 'measured_value': final_metrics.get('walking_speed', 1.2),  # Use real data or fallback

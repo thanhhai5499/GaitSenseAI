@@ -439,7 +439,7 @@ class RealSenseSidebar(QWidget):
         
         self.patient_age_input = QLineEdit()
         self.patient_age_input.setPlaceholderText("Nhập tuổi (1-120)")
-        self.patient_age_input.setText("25")  # Default value
+        self.patient_age_input.setText("")  # Default value
         
         # Set input validator for numbers only
         from PyQt6.QtGui import QIntValidator
@@ -1135,19 +1135,26 @@ class RealSenseSidebar(QWidget):
         ankle_right = metrics.get('ankle_angle_right', 0)
         
         if knee_left > 0 or knee_right > 0:
-            avg_knee = (knee_left + knee_right) / 2 if knee_left > 0 and knee_right > 0 else max(knee_left, knee_right)
+            # Hiển thị 180° - góc đo để ra giá trị góc khớp thực tế
+            knee_left_conv = 180.0 - knee_left if knee_left > 0 else 0
+            knee_right_conv = 180.0 - knee_right if knee_right > 0 else 0
+            avg_knee = (knee_left_conv + knee_right_conv) / 2 if knee_left_conv > 0 and knee_right_conv > 0 else max(knee_left_conv, knee_right_conv)
             self.knee_angle_value.setText(f"{avg_knee:.1f}°")
         else:
             self.knee_angle_value.setText("0°")
         
         if hip_left > 0 or hip_right > 0:
-            avg_hip = (hip_left + hip_right) / 2 if hip_left > 0 and hip_right > 0 else max(hip_left, hip_right)
+            hip_left_conv = 180.0 - hip_left if hip_left > 0 else 0
+            hip_right_conv = 180.0 - hip_right if hip_right > 0 else 0
+            avg_hip = (hip_left_conv + hip_right_conv) / 2 if hip_left_conv > 0 and hip_right_conv > 0 else max(hip_left_conv, hip_right_conv)
             self.hip_angle_value.setText(f"{avg_hip:.1f}°")
         else:
             self.hip_angle_value.setText("0°")
         
         if ankle_left > 0 or ankle_right > 0:
-            avg_ankle = (ankle_left + ankle_right) / 2 if ankle_left > 0 and ankle_right > 0 else max(ankle_left, ankle_right)
+            ankle_left_conv = 180.0 - ankle_left if ankle_left > 0 else 0
+            ankle_right_conv = 180.0 - ankle_right if ankle_right > 0 else 0
+            avg_ankle = (ankle_left_conv + ankle_right_conv) / 2 if ankle_left_conv > 0 and ankle_right_conv > 0 else max(ankle_left_conv, ankle_right_conv)
             self.ankle_angle_value.setText(f"{avg_ankle:.1f}°")
         else:
             self.ankle_angle_value.setText("0°")

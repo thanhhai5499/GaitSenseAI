@@ -682,6 +682,20 @@ class MainWindow(QMainWindow):
                     box-shadow: 0 4px 15px rgba(0,120,212,0.3);
                     text-align: center;
                 }}
+                .patient-info {{
+                    margin-top: 20px;
+                    font-size: 18px;
+                    color: #212529;
+                    background: rgba(255,255,255,0.95);
+                    padding: 15px;
+                    border-radius: 10px;
+                    text-align: left;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }}
+                .patient-info strong {{
+                    color: #0078d4;
+                    font-weight: bold;
+                }}
                 .section {{ 
                     margin: 20px 0; 
                     padding: 25px; 
@@ -785,7 +799,7 @@ class MainWindow(QMainWindow):
                     text-align: center;
                     margin: 20px 0;
                 }}
-                h2 {{ font-size: 24px; margin: 15px 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }}
+                h2 {{ font-size: 24px; margin: 15px 0; color: #212529; text-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold; }}
                 h3 {{ font-size: 18px; margin: 12px 0; color: #495057; }}
                 strong {{ font-weight: bold; color: #212529; }}
             </style>
@@ -793,7 +807,7 @@ class MainWindow(QMainWindow):
         <body>
             <div class="header">
                 <h2>BÁO CÁO PHÂN TÍCH DÁNG ĐI CHI TIẾT</h2>
-                <div style="margin-top: 20px; font-size: 18px;">
+                <div class="patient-info">
                     <p><strong>Người Đo:</strong> {diagnosis.get('patient_name', 'N/A')} - {diagnosis.get('patient_age', 'N/A')} tuổi ({diagnosis.get('patient_gender', 'N/A')})</p>
                     <p><strong>Thời gian:</strong> {diagnosis.get('session_date', 'N/A')}</p>
                 </div>
@@ -933,6 +947,8 @@ class MainWindow(QMainWindow):
                         <td style="color: {color}; font-weight: bold;">{status}</td>
                     </tr>
                 """
+
+        # Bỏ hàng Góc Hông khỏi THÔNG SỐ CHUNG theo yêu cầu
         
         html += """
                     </tbody>

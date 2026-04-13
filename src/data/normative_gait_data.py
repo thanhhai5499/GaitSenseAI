@@ -49,62 +49,62 @@ class NormativeGaitData:
         self.normative_parameters = {
             "stride_length": {  # Chiều dài bước (cm) - Điều chỉnh cho người Việt Nam
                 "male": {
-                    "young_adult": (110.0, 12.0),  # ~67% chiều cao 164.5cm, đi bộ thường VN
-                    "middle_age": (105.0, 13.0),   # Giảm theo tuổi tác
-                    "older_adult": (95.0, 15.0)    # Bước chân ngắn hơn, an toàn hơn
+                    "young_adult": (65.0, 12.0),  # ~67% chiều cao 164.5cm, đi bộ thường VN
+                    "middle_age": (58.0, 13.0),   # Giảm theo tuổi tác
+                    "older_adult": (56.0, 15.0)    # Bước chân ngắn hơn, an toàn hơn
                 },
                 "female": {
-                    "young_adult": (100.0, 10.0),  # ~65% chiều cao 154.4cm
-                    "middle_age": (95.0, 12.0),    # Phù hợp với thói quen đi bộ VN
-                    "older_adult": (85.0, 14.0)    # Bước chân an toàn cho người cao tuổi
+                    "young_adult": (62.0, 10.0),  # ~65% chiều cao 154.4cm
+                    "middle_age": (57.5, 12.0),    # Phù hợp với thói quen đi bộ VN
+                    "older_adult": (55, 14.0)    # Bước chân an toàn cho người cao tuổi
                 }
             },
             "walking_speed": {  # Tốc độ đi (m/s) - Điều chỉnh cho người Việt Nam và đi bộ thường
                 "male": {
-                    "young_adult": (1.1, 0.2),     # Tốc độ đi bộ tự nhiên người VN
-                    "middle_age": (1.0, 0.2),      # Giảm nhẹ theo tuổi
-                    "older_adult": (0.8, 0.2)      # An toàn cho người cao tuổi
+                    "young_adult": (1.8, 0.2),     # Tốc độ đi bộ tự nhiên người VN
+                    "middle_age": (1.65, 0.2),      # Giảm nhẹ theo tuổi
+                    "older_adult": (1.45, 0.2)      # An toàn cho người cao tuổi
                 },
                 "female": {
-                    "young_adult": (1.0, 0.2),     # Tốc độ phù hợp với người nữ VN
-                    "middle_age": (0.9, 0.2),      # Thói quen đi bộ thận trọng
-                    "older_adult": (0.7, 0.2)      # Ưu tiên an toàn
+                    "young_adult": (1.7, 0.2),     # Tốc độ phù hợp với người nữ VN
+                    "middle_age": (1.6, 0.2),      # Thói quen đi bộ thận trọng
+                    "older_adult": (1.4, 0.2)      # Ưu tiên an toàn
                 }
             },
             "stance_phase_percentage": {  # % thời gian đặt chân - Điều chỉnh cho đi bộ thường VN
                 "male": {
-                    "young_adult": (62.1, 1.9),    # Tăng do đi bộ chậm hơn
-                    "middle_age": (63.2, 2.2),     # Thận trọng hơn theo tuổi
-                    "older_adult": (64.8, 2.9)     # An toàn hơn cho người lớn tuổi
+                    "young_adult": (60.5, 1.9),    # Tăng do đi bộ chậm hơn
+                    "middle_age": (59, 2.2),     # Thận trọng hơn theo tuổi
+                    "older_adult": (56.5, 2.9)     # An toàn hơn cho người lớn tuổi
                 },
                 "female": {
-                    "young_adult": (62.6, 1.7),    # Tương tự nam giới
-                    "middle_age": (63.7, 2.0),     # Thói quen đi bộ thận trọng
-                    "older_adult": (65.2, 2.6)     # Ưa thích sự ổn định
+                    "young_adult": (60, 1.7),    # Tương tự nam giới
+                    "middle_age": (58.5, 2.0),     # Thói quen đi bộ thận trọng
+                    "older_adult": (56, 2.6)     # Ưa thích sự ổn định
                 }
             },
             "foot_clearance": {  # Chiều cao nâng chân (cm) - Dữ liệu từ Winter et al.
                 "male": {
-                    "young_adult": (5.8, 1.2),     # Trung bình 5.8cm cho người trẻ VN
-                    "middle_age": (5.4, 1.3),      # Giảm nhẹ theo tuổi
-                    "older_adult": (4.8, 1.5)      # Thận trọng hơn, nâng chân thấp
+                    "young_adult": (9.8, 1.2),     # Trung bình 5.8cm cho người trẻ VN
+                    "middle_age": (9.4, 1.3),      # Giảm nhẹ theo tuổi
+                    "older_adult": (8.8, 1.5)      # Thận trọng hơn, nâng chân thấp
                 },
                 "female": {
-                    "young_adult": (5.5, 1.1),     # Thấp hơn nam giới một chút
-                    "middle_age": (5.1, 1.2),      # Xu hướng đi bộ thận trọng
-                    "older_adult": (4.5, 1.4)      # Ưu tiên an toàn, tránh vấp
+                    "young_adult": (9.5, 1.1),     # Thấp hơn nam giới một chút
+                    "middle_age": (9.1, 1.2),      # Xu hướng đi bộ thận trọng
+                    "older_adult": (8.5, 1.4)      # Ưu tiên an toàn, tránh vấp
                 }
             },
             "step_width": {  # Chiều rộng bước (cm) - Dữ liệu từ Owings & Grabiner
                 "male": {
-                    "young_adult": (12.5, 2.8),    # Trung bình 12.5cm cho người VN
-                    "middle_age": (13.2, 3.0),     # Tăng nhẹ để ổn định
-                    "older_adult": (14.5, 3.5)     # Rộng hơn để thăng bằng tốt
+                    "young_adult": (21, 2.8),    # Trung bình 12.5cm cho người VN
+                    "middle_age": (19, 3.0),     # Tăng nhẹ để ổn định
+                    "older_adult": (17.5, 3.5)     # Rộng hơn để thăng bằng tốt
                 },
                 "female": {
-                    "young_adult": (11.8, 2.5),    # Hẹp hơn nam giới
-                    "middle_age": (12.4, 2.7),     # Tăng theo tuổi tác
-                    "older_adult": (13.8, 3.2)     # Ưu tiên thăng bằng
+                    "young_adult": (21, 2.5),    # Hẹp hơn nam giới
+                    "middle_age": (18.5, 2.7),     # Tăng theo tuổi tác
+                    "older_adult": (16.5, 3.2)     # Ưu tiên thăng bằng
                 }
             }
         }
@@ -119,10 +119,10 @@ class NormativeGaitData:
         
         # Ngưỡng bất cân xứng (%) - Robinson et al. (1987), Sadeghi et al. (2000)
         self.asymmetry_thresholds = {
-            "normal": 3.0,        # <3% - Considerado normal em literatura
-            "mild": 6.0,          # 3-6% - Leve assimetria detectável
-            "moderate": 10.0,     # 6-10% - Assimetria moderada, atenção clínica
-            "severe": 15.0        # >10% - Assimetria significativa, intervenção
+            "normal": 8.0,        # <3% - Considerado normal em literatura
+            "mild": 12.0,          # 3-6% - Leve assimetria detectável
+            "moderate": 15.0,     # 6-10% - Assimetria moderada, atenção clínica
+            "severe": 20.0        # >10% - Assimetria significativa, intervenção
         }
         
         # Metadata về nguồn dữ liệu
